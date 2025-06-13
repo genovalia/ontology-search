@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 
 
 class BaseModel(models.Model):
@@ -12,6 +13,9 @@ class BaseModel(models.Model):
 
 
 class Ontology(BaseModel):
+    class Meta:
+        verbose_name_plural = "Ontologies"
+
     uri = models.URLField(primary_key=True)
     label = models.CharField(max_length=255, blank=True, null=True)
 
@@ -20,6 +24,13 @@ class Ontology(BaseModel):
 
 
 class Term(BaseModel):
+    class Meta:
+        verbose_name_plural = "Terms"
+        indexes = [
+            models.Index(fields=["uri"]),
+            models.Index(fields=["ontology"]),
+        ]
+
     uri = models.URLField(primary_key=True)
     ontology = models.ForeignKey(
         Ontology,
@@ -31,12 +42,12 @@ class Term(BaseModel):
 
     label = models.CharField(max_length=255, blank=True, null=True)
     definition = models.TextField(blank=True, null=True)
-    subClassOf = models.ForeignKey(
-        "self",
-        related_name="subClasses",
-        on_delete=models.SET_NULL,
+    subClassOf = ArrayField(
+        models.URLField(),
         blank=True,
         null=True,
+        default=list,
+        help_text="List of URIs for parent classes (subClassOf relationships)",
     )
 
     weight = models.FloatField(default=1.0, blank=True, null=True)
