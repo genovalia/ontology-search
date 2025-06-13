@@ -18,7 +18,9 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "drf_spectacular",
 ]
-LOCAL_APPS = []
+LOCAL_APPS = [
+    "apps.ontologies",
+]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
@@ -79,8 +81,8 @@ USE_THOUSAND_SEPARATOR = True
 THOUSAND_SEPARATOR = " "
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "",
+    "TITLE": "Ontology Search API",
     "DESCRIPTION": "",
-    "VERSION": "1.0.0",
+    "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
