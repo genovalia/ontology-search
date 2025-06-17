@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
+    image: registre.apps.ul-pca-pr-ul01.ulaval.ca/ul-val-genovalia-pr/ontology-search-dev:latest
     env_file:
       - path: local.env
         required: false

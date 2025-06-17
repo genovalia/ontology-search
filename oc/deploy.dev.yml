@@ -1,0 +1,212 @@
+# openshift deployment config
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+
+metadata:
+  name: ontology-search-dev
+  labels:
+    app: ontology-search-dev
+  namespace: ul-val-genovalia-pr
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    app: ontology-search-dev
+    deploymentconfig: ontology-search-dev
+  strategy:
+    type: Rolling
+    resources: {}
+    activeDeadlineSeconds: 21600
+  template:
+    metadata:
+      labels:
+        app: ontology-search-dev
+        deploymentconfig: ontology-search-dev
+    spec:
+      volumes:
+        - name: ontology-search-dev-volume
+          persistentVolumeClaim:
+            claimName: ul-pca-pr-valeria-ul-val-genovalia-pr-data01
+      containers:
+        - name: ontology-frontend-dev
+          image: registre.apps.ul-pca-pr-ul01.ulaval.ca/ul-val-genovalia-pr/ontology-search-frontend-dev:latest
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+              memory: 150Mi
+            requests:
+              cpu: 100m
+              memory: 150Mi
+          envFrom:
+            - configMapRef:
+                name: ontology-search-dev-configmap
+        - name: ontology-search-dev
+          image: registre.apps.ul-pca-pr-ul01.ulaval.ca/ul-val-genovalia-pr/ontology-search-dev:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 250m
+              memory: 250Mi
+            requests:
+              cpu: 250m
+              memory: 250Mi
+          envFrom:
+            - configMapRef:
+                name: ontology-search-dev-configmap
+          volumeMounts:
+            - name: ontology-search-dev-volume
+              mountPath: /usr/src/cms/static
+              subPath: static
+
+        - name: ontology-search-dev-redis
+          image: docker.io/redis:6.2.4
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          env:
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "yes"
+          volumeMounts:
+            - name: ontology-search-dev-volume
+              mountPath: /data
+              subPath: redis
+
+        - name: ontology-search-dev-postgres
+          image: docker.io/postgres:13
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 250m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 512Mi
+          envFrom:
+            - configMapRef:
+                name: ontology-search-dev-configmap
+          volumeMounts:
+            - name: ontology-search-dev-volume
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres
+
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 10
+      dnsPolicy: ClusterFirst
+      schedulerName: default-scheduler
+---
+# service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ontology-search-dev-service
+  labels:
+    app: ontology-search-dev
+  namespace: ul-val-genovalia-pr
+spec:
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: ontology-search-dev
+  sessionAffinity: None
+  type: ClusterIP
+---
+# service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ontology-search-dev-frontend-service
+  labels:
+    app: ontology-search-dev
+  namespace: ul-val-genovalia-pr
+spec:
+  ports:
+    - name: 3000-tcp
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: ontology-search-dev
+  sessionAffinity: None
+  type: ClusterIP
+---
+# route
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ontology-search-dev
+  labels:
+    app: ontology-search-dev
+  namespace: ul-val-genovalia-pr
+spec:
+  host: ontology-search-api-dev.apps.genovalia.ulaval.ca
+  port:
+    targetPort: 8080-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  to:
+    kind: Service
+    name: ontology-search-dev-service
+    weight: 100
+  wildcardPolicy: None
+---
+# route
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ontology-search-frontend-dev
+  labels:
+    app: ontology-search-dev
+  namespace: ul-val-genovalia-pr
+spec:
+  host: ontology-search-frontend-dev.apps.genovalia.ulaval.ca
+  port:
+    targetPort: 3000-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  to:
+    kind: Service
+    name: ontology-search-dev-frontend-service
+    weight: 100
+  wildcardPolicy: None
+---
+# configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ontology-search-dev-configmap
+  namespace: ul-val-genovalia-pr
+data:
+  DJANGO_SETTINGS_MODULE: settings.dev
+  DJANGO_SUPERUSER_USERNAME: admin
+  DJANGO_SUPERUSER_PASSWORD: secret
+  DJANGO_SECRET_KEY: fhiefhoewqhfiodsfhioh45oh458ydfy9sdgfidufid
+  DJANGO_MANAGE_MIGRATE: 'off'
+  DJANGO_DEBUG: "True"
+  POSTGRES_DB: ontology_search_dev
+  POSTGRES_USER: ontology_search_dev
+  POSTGRES_PASSWORD: ontology_search_dev
+  PGDATA: /var/lib/postgresql/data/pgdata
+  DB_HOST: localhost
+  DB_PORT: '5432'
+  REDIS_HOST: localhost
+  REDIS_PORT: "6379"
+  NUXT_API_URL: https://ontology-search-api-dev.apps.genovalia.ulaval.ca
