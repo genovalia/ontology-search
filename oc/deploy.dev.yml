@@ -35,11 +35,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              cpu: 100m
-              memory: 150Mi
+              cpu: 250m
+              memory: 256Mi
             requests:
-              cpu: 100m
-              memory: 150Mi
+              cpu: 250m
+              memory: 256Mi
           envFrom:
             - configMapRef:
                 name: ontology-search-dev-configmap
@@ -50,11 +50,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              cpu: 250m
-              memory: 250Mi
+              cpu: 256m
+              memory: 1024Mi
             requests:
-              cpu: 250m
-              memory: 250Mi
+              cpu: 256m
+              memory: 1024Mi
           envFrom:
             - configMapRef:
                 name: ontology-search-dev-configmap
@@ -70,10 +70,10 @@ spec:
               protocol: TCP
           resources:
             limits:
-              cpu: 100m
+              cpu: 250m
               memory: 256Mi
             requests:
-              cpu: 100m
+              cpu: 250m
               memory: 256Mi
           env:
             - name: ALLOW_EMPTY_PASSWORD
@@ -201,9 +201,9 @@ data:
   DJANGO_SECRET_KEY: fhiefhoewqhfiodsfhioh45oh458ydfy9sdgfidufid
   DJANGO_MANAGE_MIGRATE: 'off'
   DJANGO_DEBUG: "True"
-  POSTGRES_DB: ontology_search_dev
-  POSTGRES_USER: ontology_search_dev
-  POSTGRES_PASSWORD: ontology_search_dev
+  POSTGRES_DB: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
   PGDATA: /var/lib/postgresql/data/pgdata
   DB_HOST: localhost
   DB_PORT: '5432'
